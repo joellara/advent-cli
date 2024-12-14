@@ -9,6 +9,7 @@ import time
 from bs4 import BeautifulSoup
 from datetime import datetime as dt
 from tabulate import tabulate
+from jinja2 import Template
 
 from . import config
 from .utils import (
@@ -70,13 +71,21 @@ def get(year, day):
     open(f'{year}/{day}/example_input.txt', 'w').close()
     print(f'Created {year}/{day}/example_input.txt')
 
+    template = Template("""## advent of code {{ year }}
+## https://adventofcode.com/{{ year }}
+## day {{ day }}
+
+def parse_input(lines: list[str]):
+    pass
+
+def part1(data):
+    pass
+
+def part2(data):
+    pass""")
+
     with open(f'{year}/{day}/solution.py', 'w') as f:
-        f.write(f'## advent of code {year}\n'
-                f'## https://adventofcode.com/{year}\n'
-                f'## day {day}\n\n'
-                'def parse_input(lines):\n    pass\n\n'
-                'def part1(data):\n    pass\n\n'
-                'def part2(data):\n    pass')
+        f.write(template.render(year=year, day=day))
     print(f'Created {year}/{day}/solution.py')
 
 
@@ -137,6 +146,62 @@ def stats(year):
         print(colored(f'Use "advent stats {year} --private" to see them.\n', 'grey'))
 
 
+def show_private_leaderboard(year, board_id):
+    conf = config.get_config()
+    r = requests.get(
+                f'https://adventofcode.com/{year}/leaderboard/private/view/{board_id}',
+                cookies={'session': conf['session_cookie']}
+            )
+    if '[Log In]' in r.text:
+        print(colored('Session cookie is invalid or expired.', 'red'))
+        return
+
+    soup = BeautifulSoup(r.text, 'html.parser')
+
+    intro_text = soup.select('article p')[0].text
+    board_owner = soup.find('div', class_='user').contents[0].strip() \
+        if 'This is your' in intro_text \
+        else re.findall(r'private leaderboard of (.*) for', intro_text)[0]
+
+    rows = soup.find_all('div', class_='privboard-row')[1:]
+
+    top_score_len = len(rows[0].find_all(text=True, recursive=False)[0].strip())
+    print(f"\n{board_owner}'s private leaderboard {colored(f'({board_id})', 'grey')}")
+    print(f'\n{" "*(top_score_len+14)}1111111111222222'
+            f'\n{" "*(top_score_len+5)}1234567890123456789012345')
+
+    for row in rows:
+        position = row.find('span', class_='privboard-position')
+        if position is None or len(position) != 2:
+            position = ' '
+        else:
+            position = position.text
+        stars = row.find_all('span', class_=re.compile('privboard-star-*'))
+        name = row.find('span', class_='privboard-name').text
+        name_link = row.select('.privboard-name a')[0].attrs['href'] \
+            if len(row.select('.privboard-name a')) else None
+        score = row.find_all(text=True, recursive=False)[0].strip()
+
+        print(f'{position} {score:>{top_score_len}}', end=' ')
+        for span in stars:
+            class_ = span.attrs['class'][0]
+            if 'both' in class_:
+                print(colored('*', 'yellow'), end='')
+            elif 'firstonly' in class_:
+                print(colored('*', 'cyan'), end='')
+            elif 'unlocked' in class_:
+                print(colored('*', 'grey'), end='')
+            elif 'locked' in class_:
+                print(' ', end='')
+
+        print(f' {name}', end=' ')
+        print(f'({colored(name_link, "blue")})' if name_link is not None else '')
+
+    print()
+    print(f'({colored("*", "yellow")} 2 stars) '
+            f'({colored("*", "cyan")} 1 star) '
+            f'({colored("*", "grey")} 0 stars)\n')
+
 def private_leaderboard_stats(year):
     today = dt.today()
     if today.year <= int(year) and today.month < 12:
@@ -146,63 +211,24 @@ def private_leaderboard_stats(year):
     conf = config.get_config()
     if conf['private_leaderboards']:
         for board_id in conf['private_leaderboards']:
-            r = requests.get(
-                f'https://adventofcode.com/{year}/leaderboard/private/view/{board_id}',
+            show_private_leaderboard(year, board_id)
+    else:
+        r = requests.get(
+                f'https://adventofcode.com/{year}/leaderboard/private',
                 cookies={'session': conf['session_cookie']}
             )
-            if '[Log In]' in r.text:
-                print(colored('Session cookie is invalid or expired.', 'red'))
-                return
+        if '[Log In]' in r.text:
+            print(colored('Session cookie is invalid or expired.', 'red'))
+            return
+        soup = BeautifulSoup(r.text, 'html.parser')
 
-            soup = BeautifulSoup(r.text, 'html.parser')
+        links = soup.find_all('a', href=re.compile(r'/leaderboard/private/view'))
 
-            intro_text = soup.select('article p')[0].text
-            board_owner = soup.find('div', class_='user').contents[0].strip() \
-                if 'This is your' in intro_text \
-                else re.findall(r'private leaderboard of (.*) for', intro_text)[0]
-
-            rows = soup.find_all('div', class_='privboard-row')[1:]
-
-            top_score_len = len(rows[0].find_all(text=True, recursive=False)[0].strip())
-            print(f"\n{board_owner}'s private leaderboard {colored(f'({board_id})', 'grey')}")
-            print(f'\n{" "*(top_score_len+14)}1111111111222222'
-                  f'\n{" "*(top_score_len+5)}1234567890123456789012345')
-
-            for row in rows:
-                position = row.find('span', class_='privboard-position').text
-                if len(position) == 2:
-                    position = " " + position
-                stars = row.find_all('span', class_=re.compile('privboard-star-*'))
-                name = row.find('span', class_='privboard-name').text
-                name_link = row.select('.privboard-name a')[0].attrs['href'] \
-                    if len(row.select('.privboard-name a')) else None
-                score = row.find_all(text=True, recursive=False)[0].strip()
-
-                print(f'{position} {score:>{top_score_len}}', end=' ')
-                for span in stars:
-                    class_ = span.attrs['class'][0]
-                    if 'both' in class_:
-                        print(colored('*', 'yellow'), end='')
-                    elif 'firstonly' in class_:
-                        print(colored('*', 'cyan'), end='')
-                    elif 'unlocked' in class_:
-                        print(colored('*', 'grey'), end='')
-                    elif 'locked' in class_:
-                        print(' ', end='')
-
-                print(f' {name}', end=' ')
-                print(f'({colored(name_link, "blue")})' if name_link is not None else '')
-
-            print()
-            print(f'({colored("*", "yellow")} 2 stars) '
-                  f'({colored("*", "cyan")} 1 star) '
-                  f'({colored("*", "grey")} 0 stars)\n')
-    else:
-        print(colored('You are not a member of any private leaderboards '
-                      'or you have not configured them.', 'red'))
-        print(colored('Set the environment variable ADVENT_PRIV_BOARDS to '
-                      'a comma-separated list of private leaderboard IDs.', 'red'))
-
+        if not links:
+            print(colored('You are not a member of any private leaderboards', 'red'))
+        else:
+            for link in links:
+                show_private_leaderboard(year, link.attrs['href'].split('/')[-1])
 
 def test(year, day, solution_file='solution', example=False):
 

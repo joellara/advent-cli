@@ -21,6 +21,53 @@ from .utils import (
     Status
 )
 
+def get_solution(year, day):
+    if not os.path.exists(f'{year}/{day}/'):
+        print(colored('Directory does not exist, first get the puzzle:', 'red'))
+        print(colored(f'  {os.getcwd()}/{year}/{day}/', 'red'))
+        return
+
+    conf = config.get_config()
+    r = requests.get(f'https://adventofcode.com/{year}/day/{int(day)}',
+                     cookies={'session': conf['session_cookie']})
+    if r.status_code == 404:
+        if 'before it unlocks!' in r.text:
+            print(colored('This puzzle has not unlocked yet.', 'red'))
+            print(colored(f'It will unlock on Dec {day} {year} at midnight EST (UTC-5).',
+                          'red'))
+            print(colored(f'Use "advent countdown {year}/{day}" to view a live countdown.',
+                          'grey'))
+            return
+        else:
+            print(colored('The server returned error 404 for url:', 'red'))
+            print(colored(f'  "https://adventofcode.com/{year}/day/{int(day)}/"', 'red'))
+            return
+    elif '[Log In]' in r.text:
+        print(colored('Session cookie is invalid or expired.', 'red'))
+        return
+
+    soup = BeautifulSoup(r.text, 'html.parser')
+    def find_solutions(element):
+        if element.name == 'p' and re.search(r'Your puzzle answer was', element.text):
+            return True
+        return False
+    solutions = soup.find_all(find_solutions)
+
+    print(solutions)
+    if len(solutions) == 0:
+        print(colored('No solutions found.', 'red'))
+        return
+
+    number = 1
+    for solution in solutions:
+        answer = solution.find('code').text
+        # write a file named solution1.txt with the answer
+        with open(f'{year}/{day}/solution{number}.txt', 'w') as f:
+            f.write(answer)
+        print(f'Wrote solution to {year}/{day}/solution{number}.txt')
+        number += 1
+    
+    print(colored('All solutions written.', 'green'))
 
 def get(year, day):
     if os.path.exists(f'{year}/{day}/'):

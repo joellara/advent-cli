@@ -5,6 +5,7 @@ from . import commands
 from ._version import __version__
 from .utils import CustomHelpFormatter
 
+from termcolor import colored
 
 def main():
     parser = argparse.ArgumentParser(formatter_class=CustomHelpFormatter)
@@ -14,17 +15,28 @@ def main():
         version=f'advent-cli {__version__}'
     )
     command_subparsers = parser.add_subparsers(
-        dest='command', description='use advent {subcommand} --help for arguments'
+        dest='command', description='use advent {subcommand} --help for arguments', required=True
     )
     parser_get = command_subparsers.add_parser(
         'get',
         help='download prompt and input, generate solution template',
         formatter_class=CustomHelpFormatter
     )
-    parser_get.add_argument(
+
+    parser_subparsers = parser_get.add_subparsers(dest="subcommand", help="use advent get puzzle date to get input", required=True)
+    puzzle_parser = parser_subparsers.add_parser('puzzle', help="use advent get puzzle date to get input")
+    solution_parser = parser_subparsers.add_parser('solution', help="use advent get solution date to get input")
+    
+    puzzle_parser.add_argument(
         'date',
         help='the year and day in YYYY/DD format (e.g. "2021/01")'
     )
+
+    solution_parser.add_argument(
+        'date',
+        help='the year and day in YYYY/DD format (e.g. "2021/01")'
+    )
+
     parser_stats = command_subparsers.add_parser(
         'stats',
         help='show personal stats or private leaderboards',
@@ -93,8 +105,14 @@ def main():
     args = parser.parse_args()
 
     if args.command == 'get':
-        year, day = args.date.split('/')
-        commands.get(year, day)
+        date = args.date.split('/')
+        if len(date) != 2:
+            print(colored('Invalid date format. Please use YYYY/DD format.', 'red'))
+        (year, day) = date
+        if args.subcommand == 'puzzle':
+            commands.get(year, day)
+        elif args.subcommand == 'solution':
+            commands.get_solution(year, day)
 
     elif args.command == 'stats':
         if args.show_private:

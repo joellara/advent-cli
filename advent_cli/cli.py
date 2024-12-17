@@ -29,12 +29,12 @@ def main():
     
     puzzle_parser.add_argument(
         'date',
-        help='the year and day in YYYY/DD format (e.g. "2021/01")'
+        help='the year and day in YYYY/DD format (e.g. "2021/01") or year to get all puzzles from that year'
     )
 
     solution_parser.add_argument(
         'date',
-        help='the year and day in YYYY/DD format (e.g. "2021/01")'
+        help='the year and day in YYYY/DD format (e.g. "2021/01") or "year" to get all solutions from that year'
     )
 
     parser_stats = command_subparsers.add_parser(
@@ -106,9 +106,12 @@ def main():
 
     if args.command == 'get':
         date = args.date.split('/')
-        if len(date) != 2:
+        if len(date) == 0:
             print(colored('Invalid date format. Please use YYYY/DD format.', 'red'))
-        (year, day) = date
+        
+        year = date[0]
+        day = date[1] if len(date) > 1 else None
+
         if args.subcommand == 'puzzle':
             commands.get(year, day)
         elif args.subcommand == 'solution':

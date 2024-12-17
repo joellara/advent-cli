@@ -69,7 +69,7 @@ def get_solution(year, day):
     
     print(colored('All solutions written.', 'green'))
 
-def get(year, day):
+def get_puzzle_day(year, day):
     if os.path.exists(f'{year}/{day}/'):
         print(colored('Directory already exists:', 'red'))
         print(colored(f'  {os.getcwd()}/{year}/{day}/', 'red'))
@@ -97,8 +97,11 @@ def get(year, day):
     os.makedirs(f'{year}/{day}/')
 
     soup = BeautifulSoup(r.text, 'html.parser')
-    part1_html = soup.find('article', class_='day-desc').decode_contents()
+    parts = soup.find_all('article', class_='day-desc')
 
+    part1_html = parts[0].decode_contents()
+
+    title = parts[0].find('h2').text
     # remove hyphens from title sections, makes markdown look nicer
     part1_html = re.sub('--- (.*) ---', r'\1', part1_html)
 
@@ -107,6 +110,9 @@ def get(year, day):
 
     with open(f'{year}/{day}/prompt.md', 'w') as f:
         f.write(custom_markdownify(part1_html))
+        if len(parts) == 2:
+            part2_html = parts[1].decode_contents()
+            f.write(custom_markdownify(part2_html))
     print(f'Downloaded prompt to {year}/{day}/prompt.md')
 
     r = requests.get(f'https://adventofcode.com/{year}/day/{int(day)}/input',
@@ -118,9 +124,11 @@ def get(year, day):
     open(f'{year}/{day}/example_input.txt', 'w').close()
     print(f'Created {year}/{day}/example_input.txt')
 
-    template = Template("""## advent of code {{ year }}
-## https://adventofcode.com/{{ year }}
-## day {{ day }}
+    template = Template("""## Advent of Code {{ year }}
+## https://adventofcode.com/{{ year }}/day/{{ day }}
+## {{ title }}
+
+import os
 
 def parse_input(lines: list[str]):
     pass
@@ -129,12 +137,32 @@ def part1(data):
     pass
 
 def part2(data):
-    pass""")
+    pass
+
+if __name__ == "__main__":
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(current_dir, "example_input.txt"), "r") as f:
+        lines = f.readlines()
+    data = parse_input(lines)
+    print(part1(data))
+    print(part2(data))
+""")
 
     with open(f'{year}/{day}/solution.py', 'w') as f:
-        f.write(template.render(year=year, day=day))
+        f.write(template.render(year=year, day=day, title=title))
     print(f'Created {year}/{day}/solution.py')
 
+def get(year, day):
+    if day is None:
+        curr_date = dt.now(pytz.timezone('America/New_York'))
+        if year < curr_date.year:
+            for day in range(1, 26):
+                get_puzzle_day(year, day)
+        else:
+            for day in range(1, curr_date.day + 1):
+                get_puzzle_day(year, day)
+    else:
+        get_puzzle_day(year, day)
 
 def stats(year):
     today = dt.today()

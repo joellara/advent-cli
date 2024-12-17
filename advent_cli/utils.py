@@ -40,10 +40,10 @@ def colored(text, color):
         return tc_colored(text, color)
 
 
-def compute_answers(year, day, solution_file='solution', example=False):
+def compute_answers(year, day, file_path, solution_file='solution'):
     sys.path.append(os.getcwd())
     solution = import_module(f'{year}.{day}.{solution_file}')
-    with open(f'{year}/{day}/{"example_" if example else ""}input.txt', 'r') as f:
+    with open(file_path, 'r') as f:
         data = solution.parse_input([
             line.replace('\r', '').replace('\n', '') for line in f.readlines()
         ])

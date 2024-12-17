@@ -64,10 +64,11 @@ def main():
         help='the year and day in YYYY/DD format (e.g. "2021/01")'
     )
     parser_test.add_argument(
-        '-e', '--example',
-        dest='run_example',
-        action='store_true',
-        help='use example_input.txt for input'
+        '-i', '--input',
+        required=False,
+        dest='input_file',
+        help='use input.txt for input or pass in the input file as an argument',
+        default="input.txt"
     )
     parser_test.add_argument(
         '-f', '--solution-file',
@@ -125,7 +126,7 @@ def main():
 
     elif args.command == 'test':
         year, day = args.date.split('/')
-        commands.test(year, day, solution_file=args.solution_file, example=args.run_example)
+        commands.test(year, day, solution_file=args.solution_file, input_file=args.input_file)
 
     elif args.command == 'submit':
         year, day = args.date.split('/')

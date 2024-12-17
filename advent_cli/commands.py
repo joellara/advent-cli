@@ -21,6 +21,8 @@ from .utils import (
     Status
 )
 
+INPUT_FILE_NAME = "input.txt"
+
 def get_solution(year, day):
     if not os.path.exists(f'{year}/{day}/'):
         print(colored('Directory does not exist, first get the puzzle:', 'red'))
@@ -117,9 +119,9 @@ def get_puzzle_day(year, day):
 
     r = requests.get(f'https://adventofcode.com/{year}/day/{int(day)}/input',
                      cookies={'session': conf['session_cookie']})
-    with open(f'{year}/{day}/input.txt', 'w') as f:
+    with open(f'{year}/{day}/{INPUT_FILE_NAME}', 'w') as f:
         f.write(r.text)
-    print(f'Downloaded input to {year}/{day}/input.txt')
+    print(f'Downloaded input to {year}/{day}/{INPUT_FILE_NAME}')
 
     open(f'{year}/{day}/example_input.txt', 'w').close()
     print(f'Created {year}/{day}/example_input.txt')
@@ -305,21 +307,26 @@ def private_leaderboard_stats(year):
             for link in links:
                 show_private_leaderboard(year, link.attrs['href'].split('/')[-1])
 
-def test(year, day, solution_file='solution', example=False):
+def test(year, day, solution_file='solution', input_file=None):
 
     if not os.path.exists(f'{year}/{day}/'):
         print(colored('Directory does not exist:', 'red'))
         print(colored(f'  "{os.getcwd()}/{year}/{day}/"', 'red'))
         return
 
-    if example:
-        if os.stat(f'{year}/{day}/example_input.txt').st_size == 0:
-            print(colored('Example input file is empty:', 'red'))
-            print(colored(f'  {os.getcwd()}/{year}/{day}/example_input.txt', 'red'))
-            return
+    if input_file is not None:
+        # check if input_file is a valid path file or a valid file in the current directory
+        if os.path.exists(f'{os.getcwd()}/{year}/{day}/{input_file}'):
+            input_file = f'{os.getcwd()}/{year}/{day}/{input_file}'
+        elif os.path.exists(input_file):
+            input_file = input_file
         else:
-            print(colored('(Using example input)', 'red'))
+            print(colored('Example input file does not exist:', 'red'))
+            print(colored(f'  {os.getcwd()}/{year}/{day}/{input_file}', 'red'))
+    else:
+        input_file = f'{os.getcwd()}/{year}/{day}/{INPUT_FILE_NAME}'
 
+    print(f'Using input file: {input_file}')
     if solution_file != 'solution':
         if not os.path.exists(f'{year}/{day}/{solution_file}.py'):
             print(colored('Solution file does not exist:', 'red'))
@@ -328,8 +335,8 @@ def test(year, day, solution_file='solution', example=False):
         print(colored(f'(Using {solution_file}.py)', 'red'))
 
     part1_answer, part2_answer = compute_answers(year, day,
-                                                 solution_file=solution_file,
-                                                 example=example)
+                                                 file_path=input_file,
+                                                 solution_file=solution_file)
     if part1_answer is not None:
         print(f'{colored("Part 1:", "cyan")} {part1_answer}')
         if part2_answer is not None:
@@ -339,7 +346,7 @@ def test(year, day, solution_file='solution', example=False):
         return
 
     if solution_file != 'solution':
-        part1_answer_orig, part2_answer_orig = compute_answers(year, day, example=example)
+        part1_answer_orig, part2_answer_orig = compute_answers(year, day, file_path=input_file)
         if part1_answer == part1_answer_orig and part2_answer == part2_answer_orig:
             print(colored('Output matches solution.py', 'green'))
         else:
@@ -360,7 +367,7 @@ def submit(year, day, solution_file='solution'):
             return
         print(colored(f'(Using {solution_file}.py)', 'red'))
 
-    part1_answer, part2_answer = compute_answers(year, day, solution_file=solution_file)
+    part1_answer, part2_answer = compute_answers(year, day, file_path=os.path.join(os.getcwd(), year, day, INPUT_FILE_NAME), solution_file=solution_file)
 
     status, response = None, None
     if part2_answer is not None:

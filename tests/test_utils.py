@@ -28,7 +28,7 @@ def test_compute_answers(mock_import_module):
         lambda l: sum([x for line in l for x in line])
     mock_import_module.return_value.part2.side_effect = \
         lambda l: [x for line in l for x in line][-1]
-    part1_answer, part2_answer = utils.compute_answers('2099', '99')
+    part1_answer, part2_answer = utils.compute_answers('2099', '99', '2099/99/example_input.txt')
     mock_import_module.assert_called_once_with('2099.99.solution')
     assert part1_answer == 36
     assert part2_answer == 8
@@ -36,7 +36,7 @@ def test_compute_answers(mock_import_module):
     # test generator
     mock_import_module.return_value.parse_input.side_effect = \
         lambda l: ([int(x) for x in line.split(',')] for line in l)
-    part1_answer, part2_answer = utils.compute_answers('2099', '92')
+    part1_answer, part2_answer = utils.compute_answers('2099', '92', '2099/92/example_input.txt')
     assert part1_answer == 36
     assert part2_answer == 8
 

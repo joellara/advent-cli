@@ -32,9 +32,21 @@ advent-cli can be invoked using the `advent` command, or `python -m advent_cli`.
 
 ### Download a question
 ```
-$ advent get YYYY/DD
+$ advent get puzzle YYYY/DD
 ```
-This will create the directory `YYYY/DD` (e.g. `2021/01`) inside the current working directory. Inside, you'll find part 1 of the puzzle prompt in `prompt.md`, your puzzle input in `input.txt`, and a generated solution template in `solution.py`. More about that [here](#solution-structure).
+This will create the directory `YYYY/DD` (e.g. `2021/01`) inside the current working directory. Inside, you'll find part 1 of the puzzle prompt in `prompt.md`, your puzzle input in `input.txt`, and a generated solution template in `solution.py`. You can also pass just `YYYY` (e.g. `2021`) to download all available puzzles for that year. More about the generated files [here](#solution-structure).
+
+### Download submitted answers
+```
+$ advent get solution YYYY/DD
+```
+For a previously solved day, this will read your accepted answers from the Advent of Code site and write them to `solution1.txt`, `solution2.txt`, etc. inside the `YYYY/DD` directory. Run `advent get puzzle` first so the directory exists.
+
+### Refresh a prompt
+```
+$ advent get prompt YYYY/DD
+```
+Re-downloads the puzzle prompt and overwrites `prompt.md` for the given day. Helpful if the prompt changed or you need to restore it.
 
 ### Test a solution
 ```

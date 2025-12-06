@@ -4,3 +4,11 @@ requires = [
   "wheel",
 ]
 build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+line-length = 95
+target-version = "py38"
+src = ["advent_cli", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
